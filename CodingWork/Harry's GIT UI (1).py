@@ -118,7 +118,7 @@ AddW = windows["Add"]
 #Git add can stage multiple files. Sees if the user wants to stage one file, 
 #multiple files or really just everything
 
-Files = tk.Combobox(AddW, selectmode = "multiple")
+Files = ttk.Combobox(AddW, selectmode = "multiple")
 Files.grid(column=1, row=1, sticky="nswe")
 
 #I am not including git add -p. I do not have time. If you want it, add it yourself.

@@ -30,11 +30,12 @@ bgF.pack()
 
 #Functions
 #CD into a folder
+#CD'd folder directory
+cfd = None
 def cdFolder():
+    global cfd
     cfd = filedialog.askdirectory()
-    print(cfd)
     os.chdir(cfd)
-    folder_window = tk.Toplevel(root)
 #Run a command in terminal
 #Suf means suffix. Like -p, ., or any of the additions.
 def RunCmd(*Suf):
@@ -47,11 +48,13 @@ def RunCmd(*Suf):
     )
 #Open existing window
 def OpWin():
-    windows[Choice.get()].deiconify()
+    #windows[Choice.get()].deiconify()
+    pass
+    #add this back later in the code due to the fact that this ain't a compiler
 
 #Fun fact: Tkinter button object's command method expects a string, not a function
 def WinCreate(title:str, height:int, width:int, options:tuple, rootWin:tk.Tk | tk.Toplevel, 
-              func:str, OpVar:tk.StringVar, textBox:bool, textBoxMessage:str = "Enter your text here", runButtonText:str = "Run your chosen function"):
+              func:str, OpVar:tk.StringVar, textBox:bool = False, textBoxMessage:str = "Enter your text here", runButtonText:str = "Run your chosen function"):
     #Setup of new window
     win = tk.Toplevel(rootWin, height=height, width=width)
     win.title(title)
@@ -67,18 +70,18 @@ def WinCreate(title:str, height:int, width:int, options:tuple, rootWin:tk.Tk | t
     win.update_idletasks()
     win.config(width=Choices.winfo_width())
     #A button to run stuff
-    RunButton = tk.Button(win, command=lambda : func(OpVar), text=runButtonText)
+    RunButton = tk.Button(win, command=lambda : func, text=runButtonText)
     RunButton.grid(row=2, column=1)
     #Quite a few Git functions need text. e.g Commit needs a commit message. So i have this textbox
-    WinTextboxLabel = tk.Label(win, text = textBoxMessage)
-    WinTextboxLabel.grid(row=3, column=1)
-    WinTextbox = scrolledtext.ScrolledText(
-    win,
-    wrap = tk.WORD,
-    height = 125,
-    width=250,
-)
-    WinTextbox.grid(row=4, column = 1)
+    if textBox == True:
+        WinTextboxLabel = tk.Label(win, text = textBoxMessage)
+        WinTextboxLabel.grid(row=3, column=1)
+        WinTextbox = scrolledtext.ScrolledText(
+        wrap = tk.WORD,
+        height = 125,
+        width=250,
+        )
+        WinTextbox.grid(row=4, column = 1)
     return win
 #UI
 
@@ -97,7 +100,7 @@ funcChoice['values'] = ('Add',
                         'Pull',
                         'Push',
                         'Commit',
-                        'Branch',
+                        'Create new branch',
                         'Checkout',
                         'Check branches',
                         'Rebase',
@@ -125,9 +128,7 @@ NameToCmd = {
     "Pull": "pull",
     "Push": "push",
     "Commit": "commit",
-    "Branch":"branch",    
-    "Checkout":'checkout',
-    "Check branches": "branch",
+    "Branch": "branch",
     "Rebase": "rebase",
     "Merge": 'merge'
             }
@@ -141,6 +142,8 @@ NameToCmd = {
 
 #You must define everything in the subwindow BEFORE you create them because you need to 
 # pass it to the function
+
+#Windows are created bit by bit for more individual control over them
 
 
 #Make sure to add not choosing right redundancy
@@ -179,131 +182,151 @@ def Add():
         pass
         #Again, can someone make sort of "opps, you made a mistake" popup? Thanks!
 
+AddWin = WinCreate(title="Add", width=250, height=250, options=tuple(AddPos), 
+                                     rootWin=root, func = "Push", runButtonText="PushOptions", OpVar = AddVar)
+
 #Commit
 
 CommitVar = tk.StringVar()
 
+CommitPos = ["Stage and commit all changes to tracked files", 
+             "Standard", 
+             "Write over the previous commit in the chain, with a new commit including all staged changes plus a new commit message"]
+
 #FYI: Git pull -r origin basically gets the current branch on the remote 
 # and puts it ahead of the current main branch
-CommitWinName = None
+
 def Commit():
     #comTex is short for commit text
-    comTex = CommitWinName.WinTextBox.get("1.0", tk.END)
-    if CommitVar == "Standard":
+    #winfo_children gets the window's children. the number 3 is hard-coded because I have other priorities
+    #and you could honestly add that yourself. And if you wondering, what does it acess, it acesses the optional
+    #textbox is the function
+    comTex = CommitWin.winfo_children()[3].get("1.0", tk.END) # type: ignore
+    if CommitVar == CommitPos[1]:
         if comTex != "":
             RunCmd("-m", f"{comTex}")
         else:
             pass #Once warning window creation is made
         
-    elif CommitVar == "Stage and commit all changes to tracked files":
+    elif CommitVar == CommitPos[0]:
         if comTex != "":
                     RunCmd("-am", f"{comTex}")
         else:
             pass #Once warning window creation is made
-    elif CommitVar == "Write over the previous commit in the chain, with a new commit including all staged changes plus a new commit message":
+    elif CommitVar == CommitPos[2]:
         if comTex != "":
             RunCmd("--amend", "-m", f"{comTex}")
         else:
-            pass #Same thing here mate.
+            pass #Same thing here mate.'
 
-#Subwindow creation
-windows = {}
-for i in NameToCmd:
-    windows[i] = WinCreate(title=NameToCmd[i], height=250, width=250, rootWin=root, 
-                           options=AddPos, func=Add, runButtonText="Stage")
-
-#Change to not doing it all at once, but bit by bit
-
-
-
-            
-         
-        
+CommitWin = WinCreate(title="Commit", width=250, height=250, options=tuple(CommitPos), 
+                                     rootWin = root, func = "Commit", runButtonText="CommitOptions", OpVar = CommitVar, 
+                                     textBox=True, textBoxMessage= "Please enter your commit message here."
+                                     )       
 #Win creation
 CommitWin = WinCreate("Push", 250, 250, ("Stage and commit all changes to tracked files", "Standard", "Write over the previous commit in the chain, with a new commit including all staged changes plus a new commit message"), root, func = "Push", runButtonText="PushOptions", OpVar = CommitVar)
-#For the actual commit message entry
-CommitMessageTextboxLabel = tk.Label(CommitWin, text = 'Enter your commit message here')
-CommitMessageTextboxLabel.grid(row=3, column=1)
-CommitMessageTextbox = scrolledtext.ScrolledText(
-    CommitWin,
-    wrap = tk.WORD,
-    height = 125,
-    width=250,
-)
-CommitMessageTextbox.grid(row=4, column = 1)
+
 
 #Pull
 
 PullVar = tk.StringVar()
-GitRepo = None  #Placeholder
 
+PullPos = ["rebase",
+           "Standard"
+           ]
 
 #FYI: Git pull -r origin basically gets the current branch on the remote 
 # and puts it ahead of the current main branch
 def Pull():
-    if PullVar == "rebase":
-        subprocess.run(
-            ["git",
-            "pull",
-            "-r",
-            "origin",
-            f"{GitRepo}"]
-        )
-    elif PullVar == "Standard":
-        subprocess.run(
-            [
-                "git",
-                "pull"
-            ]
-        )    
+    if PullVar == PullPos[0]:
+        RunCmd("-r", "origin", f"{cfd}")
+    elif PullVar == PullPos[1]:
+        RunCmd()
         
-
-WinCreate("Pull", 250, 250, ("rebase", "Standard"), root, func = "Pull", runButtonText="PullOptions", OpVar = PullVar)
+PullWin = WinCreate(title="Pull", width=250, height=250, options=("rebase", "Standard"), rootWin=root, func = "Pull", runButtonText="PullOptions", OpVar = PullVar)
 
 #Push
-
 PushVar = tk.StringVar()
-GitRepo = None  #Placeholder
 
+PushPos = [
+    "Standard",
+    "Delete branch against remote",
+    "Show what would be pushed"
+]
 
 #FYI: Git pull -r origin basically gets the current branch on the remote 
 # and puts it ahead of the current main branch
-def Pull():
-    if PushVar == "Standard":
-        subprocess.run(
-            [
-            "git",
-            "push"
-            ]
-        )
-    elif PushVar == "Delete branch against remote":
-        subprocess.run(
-            [
-                "git",
-                "push",
-                "origin",
-                "--delete",
-                "feature-branch"
-
-            ]
-        )
+def Push():
+    if PushVar == PushPos[0]:
+        RunCmd()
+    elif PushVar == PushPos[1]:
+        RunCmd("origin", "--delete", "feature-branch")
     elif PushVar == "Show what would be pushed":
+        RunCmd("--dry-run")
+
+PushWin = WinCreate(title="Push", width=250, height=250, options=tuple(PushPos), rootWin=root, func = "Push", runButtonText="PushOptions", OpVar = PushVar)
+
+#Create new branch
+
+BranchCreateVar = tk.StringVar()
+
+BranchCreatePos = [
+    "Create new branch",
+    "Switch to a new branch",
+    "Check branches",
+    "Rebase onto new branch"
+]
+#BranchCreateVar == BranchCreatePos
+
+def Branch():
+    BranchText =  BranchWin.winfo_children()[3].get("1.0", tk.END) #type: ignore
+    if BranchCreateVar == BranchCreatePos[0]:
+        RunCmd(f"{BranchText}")
+    if BranchCreateVar == BranchCreatePos[1]:
         subprocess.run(
             [
                 "git",
-                "push",
-                "--dry-run"
+                "switch",
+                f"{BranchText}"
             ]
         )
-         
-        
+    if BranchCreateVar == BranchCreatePos[2]:
+        #You can change this to runcmd(). I feel this will be easier though to use subprocess.run to
+        #directly capture the output, since i only need to do it for this one function
+        OutBranchTxt = subprocess.run(
+            [
+                "git",
+                "branch"
+            ],
+            capture_output=True,
+            text=True
+        )
+        #ResLabel for result label branch win
+        ResLblBnchWin = tk.Label(BranchWin, text=f"{OutBranchTxt}")
+        ResLblBnchWin.grid(row=5, column=1)
+    if BranchCreateVar == BranchCreatePos[3]:
+        subprocess.run(
+            [
+                "git",
+                "rebase",
+                f"{BranchText}"
+            ]
+        )
 
-WinCreate("Push", 250, 250, ("Delete branch against remote", "Standard", "Show what would be pushed"), root, func = "Push", runButtonText="PushOptions", OpVar = PushVar)
+BranchWin = WinCreate(title="Branch", width=250, height=250, options= tuple(BranchCreatePos),
+                      rootWin=root, func = "Branch", runButtonText="BranchOptions", OpVar = BranchCreateVar,
+                      textBox=True, textBoxMessage="Please enter your new branch name, name of branch you are" \
+                      "switching to, or branch you are rebasing on top of")
 
 #Only the existing functions will have code. If you want something to be added, add it yourself. I am never 
 #coming back to this project.
 
 
+
 #ending Tkinter code
 root.mainloop()
 
+#NameToCmd = {
+    #"Rebase": "rebase",
+    #"Merge": 'merge'
+     #       

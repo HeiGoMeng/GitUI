@@ -273,7 +273,8 @@ BranchCreateVar = tk.StringVar()
 BranchCreatePos = [
     "Create new branch",
     "Switch to a new branch",
-    "Check branches"
+    "Check branches",
+    "Rebase onto new branch"
 ]
 #BranchCreateVar == BranchCreatePos
 
@@ -303,11 +304,19 @@ def Branch():
         #ResLabel for result label branch win
         ResLblBnchWin = tk.Label(BranchWin, text=f"{OutBranchTxt}")
         ResLblBnchWin.grid(row=5, column=1)
+    if BranchCreateVar == BranchCreatePos[3]:
+        subprocess.run(
+            [
+                "git",
+                "rebase",
+                f"{BranchText}"
+            ]
+        )
 
 BranchWin = WinCreate(title="Branch", width=250, height=250, options= tuple(BranchCreatePos),
                       rootWin=root, func = "Branch", runButtonText="BranchOptions", OpVar = BranchCreateVar,
-                      textBox=True, textBoxMessage="Please enter your new branch name or name of branch you are" \
-                      "switching to here")
+                      textBox=True, textBoxMessage="Please enter your new branch name, name of branch you are" \
+                      "switching to, or branch you are rebasing on top of")
 
 #Only the existing functions will have code. If you want something to be added, add it yourself. I am never 
 #coming back to this project.

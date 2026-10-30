@@ -276,7 +276,7 @@ BranchCreatePos = [
     "Check branches",
     "Rebase onto new branch"
 ]
-#BranchCreateVar == BranchCreatePos
+
 
 def Branch():
     BranchText =  BranchWin.winfo_children()[3].get("1.0", tk.END) #type: ignore
@@ -318,15 +318,56 @@ BranchWin = WinCreate(title="Branch", width=250, height=250, options= tuple(Bran
                       textBox=True, textBoxMessage="Please enter your new branch name, name of branch you are" \
                       "switching to, or branch you are rebasing on top of")
 
+#Merge
+
+MergeVar = tk.StringVar()
+MergeVarSuf = tk.StringVar()
+
+MergePos = [
+    "merge with another branch",
+    "merge with multiple branches"
+]
+
+MergeSufPos = [
+    "no fast forwards",
+    "only fast forward",
+    "if possible, fast forward"
+]
+
+def Merge():
+    #A list is used here, because the will grow too much due if further options are added, due to the fact
+    #that you're combining the names and suffixes 
+    MergeCmd = []
+    if MergeVarSuf == MergeSufPos[0]:
+        MergeCmd.append("--no-ff")
+    elif MergeVar == MergeSufPos[1]:
+        MergeCmd.append("--ff-only")
+    elif MergeVarSuf == MergeSufPos[2]:
+        MergeCmd.append("--ff")
+
+    if MergeVar == MergePos[0]:
+        MergeCmd.append(MergeWin.winfo_children()[3].get("1.0", tk.END)) #type:ignore
+    elif MergeVar == MergePos[1]:
+        MergeCmd.append(MergeWin.winfo_children()[3].get("1.0", tk.END).split(","))
+
+    RunCmd(tuple(MergeCmd))
+
+MergeWin = WinCreate(title="Merge", width=250, height=250, options= tuple(MergePos),
+                      rootWin=root, func = "Merge", runButtonText="MergeOptions", OpVar = MergeVar,
+                      textBox=True, textBoxMessage="Please the name/s of the branches you wish to merge with this syntax: branch_1," \
+                      "branch_2,branch_3  and on and on, with no spaces" \
+                      "switching to, or branch you are rebasing on top of")
+SufComb = ttk.Combobox(MergeWin, textvariable=MergeVarSuf)
+SufComb['values'] = MergeSufPos
+SufComb.grid(row=1, column=2)
+
 #Only the existing functions will have code. If you want something to be added, add it yourself. I am never 
 #coming back to this project.
-
 
 
 #ending Tkinter code
 root.mainloop()
 
 #NameToCmd = {
-    #"Rebase": "rebase",
     #"Merge": 'merge'
      #       

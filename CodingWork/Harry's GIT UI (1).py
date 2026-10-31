@@ -48,8 +48,10 @@ def RunCmd(*Suf):
     )
 #Open existing window
 def OpWin():
-    #windows[Choice.get()].deiconify()
-    pass
+    windows[
+        Choice.get() #This is a part of the 5 way repeat handshake I talk about later
+        ].deiconify()
+
     #add this back later in the code due to the fact that this ain't a compiler
 
 #Fun fact: Tkinter button object's command method expects a string, not a function
@@ -77,6 +79,7 @@ def WinCreate(title:str, height:int, width:int, options:tuple, rootWin:tk.Tk | t
         WinTextboxLabel = tk.Label(win, text = textBoxMessage)
         WinTextboxLabel.grid(row=3, column=1)
         WinTextbox = scrolledtext.ScrolledText(
+        win,
         wrap = tk.WORD,
         height = 125,
         width=250,
@@ -100,10 +103,7 @@ funcChoice['values'] = ('Add',
                         'Pull',
                         'Push',
                         'Commit',
-                        'Create new branch',
-                        'Checkout',
-                        'Check branches',
-                        'Rebase',
+                        'Branch functions (inc. rebase)',
                         'Merge'
                         )
 funcChoice.grid(row = 2, column = 1, sticky="ew")
@@ -123,18 +123,18 @@ selectFolder.grid(row=3, column=1)
 #The purpose of NameToCmd, is so that long GIT function can be abreviated and to provide a dictionary 
 #of function for easy auto window creation; just enter a func here, and a window will be created for it.
 #You still need to add code though.
+
 NameToCmd = {
     'Add': "add",
     "Pull": "pull",
     "Push": "push",
     "Commit": "commit",
-    "Branch": "branch",
-    "Rebase": "rebase",
+    "Branch functions (inc. rebase)": "branch",
     "Merge": 'merge'
             }
+
 #All the function sub-windows
-#For all those wondering, NameToCmd[i] returns the key.
-#This is a list of windows for evry single function
+
 
 #Subwindows 
 
@@ -182,6 +182,8 @@ def Add():
         pass
         #Again, can someone make sort of "opps, you made a mistake" popup? Thanks!
 
+
+#Make sure to go name of func when you go NameToCmd[i] + win, so we can put all windows in one list
 AddWin = WinCreate(title="Add", width=250, height=250, options=tuple(AddPos), 
                                      rootWin=root, func = "Push", runButtonText="PushOptions", OpVar = AddVar)
 
@@ -223,8 +225,6 @@ CommitWin = WinCreate(title="Commit", width=250, height=250, options=tuple(Commi
                                      rootWin = root, func = "Commit", runButtonText="CommitOptions", OpVar = CommitVar, 
                                      textBox=True, textBoxMessage= "Please enter your commit message here."
                                      )       
-#Win creation
-CommitWin = WinCreate("Push", 250, 250, ("Stage and commit all changes to tracked files", "Standard", "Write over the previous commit in the chain, with a new commit including all staged changes plus a new commit message"), root, func = "Push", runButtonText="PushOptions", OpVar = CommitVar)
 
 
 #Pull
@@ -364,10 +364,33 @@ SufComb.grid(row=1, column=2)
 #Only the existing functions will have code. If you want something to be added, add it yourself. I am never 
 #coming back to this project.
 
+#List of all the windows for easy acces by opwin()
+
+windows = {}
+#For all those wondering, NameToCmd[i] returns the key.
+#This is a list of windows for evry single function
+#This is why we need NameToCmd[i] + win naming scheme for Toplevel window naming
+#globals() returns a list of all global variables. If you would like to be able to have window variables not be global, you can go and
+#manually add them to a global list, and change this around a bit, but this way is preferred for this simple usecase.
+
+#globals()[f"{NameToCmd[i]}Win"] is the toplevels themselves
+
+for i in range(len(NameToCmd)):
+    windows[list(NameToCmd.keys())[i]] = globals()[f"{list(NameToCmd.values())[i][0].upper()}{list(NameToCmd.values())[i][1:]}Win"]
+    #The apporach of this line works like this:
+    #list(NameTomCmd.values) returns a list of all values of NameToCmd. You then take the current index.
+    #These values are the same as the variable names except that the first letter is lowercase and that it's missing "win"
+    #globals() is a global dictionary allowing us to use the variable name to get the actual Toplevel
+    #.upper, the curly brakets, and the indexes allow us to change the string and mold it into the toplevel name/global() key
+    #this toplevel is then connected to the dic window as a value with the key list(NameToCmd.keys())[i], which is it's name in the dropdown combobox
+    #menu in the opening window
+    #NameToCmd.keys() gives you all the keys. llist turns it into a workable list since it is it's own weird type.
+    # [i] takes the current relevant key. This coordinates with the options in the dropdown menu at the starting window
+
+    #This connects to Opwin() via windows[Choice.get()], since Choice.get() is the same as NameToCmd[i],
+    #since, NameToCmd is a conversion dictionary that converts the names in the dropdown menu to the actually command names
+    #This is basically a five way handshake and for further explanation of this line, go up to the OpWin() function
 
 #ending Tkinter code
 root.mainloop()
 
-#NameToCmd = {
-    #"Merge": 'merge'
-     #       

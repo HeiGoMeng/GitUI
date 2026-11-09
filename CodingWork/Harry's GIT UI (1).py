@@ -376,6 +376,9 @@ SufComb.grid(row=1, column=2)
 
 #List of all the windows for easy acces by opwin()
 
+
+
+
 windows = {}
 #For all those wondering, NameToCmd[i] returns the key.
 #This is a list of windows for evry single function

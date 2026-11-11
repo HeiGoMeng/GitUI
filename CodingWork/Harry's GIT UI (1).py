@@ -25,7 +25,9 @@ fontUsed = font.nametofont("TkDefaultFont")
 #background and other astethics
 #bgF is background frame/root frame
 bgF = tk.Frame(root, width = 500, height=500) #
-bgImg = Image.open(r"C:\Users\harry.szeto\GitUI\CodingWork\BG.png")
+#This os code takes the file, returns the absolute path, returns the abs path dir, and attached BG.png to it since they're both 
+# in the same dir anyway 
+bgImg = Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "BG.png"))
 bg = ImageTk.PhotoImage(bgImg)
 bgLabel = tk.Label(bgF, image = bg)
 bgLabel.place(x=0, y=0, relwidth = 1, relheight = 1)
@@ -347,7 +349,10 @@ branchCreatePos = [
 
 
 def branch():
-    branchText =  branchWin.winfo_children()[3].get("1.0", tk.END) #type: ignore
+    btw = branchWin.winfo_children()[3] #type:ignore
+    #following the commit message scrolledtextwidget naming scheme
+    btwT = btw.winfo_children()[1] #type:ignore
+    branchText =  btwT.get("1.0", tk.END) #type: ignore
     if branchCreateVar.get() == branchCreatePos[0]:
         RunCmd(f"{branchText}")
     if branchCreateVar == branchCreatePos[1]:

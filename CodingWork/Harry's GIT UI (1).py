@@ -50,10 +50,9 @@ def cdFolder():
         capture_output=True,
         text=True
     ).stderr
-    print(repr(TestCmdTxt.strip()))
     if TestCmdTxt == "":
         pass
-    elif TestCmdTxt == "fatal: not a git repository (or any of the parent directories): .git":
+    elif TestCmdTxt.strip() == "fatal: not a git repository (or any of the parent directories): .git":
         WarnWin("This is not a git repo. Netiher are any of the parents. Please select a git repo. Undoing Cd now.")
         subprocess.run(
             [
@@ -70,7 +69,7 @@ def RunCmd(*Suf):
     subprocess.run(
         [
             "git", #type: ignore
-            GitOps[Choice.get()],#type: ignore
+            GitOps[Choice.get()].value,#type: ignore
             *Suf #type: ignore
         ]
     )
@@ -95,12 +94,12 @@ class GitOps(Enum):
 
 def WarnWin(warnMsg):
     WarnWin = tk.Toplevel(root)
-    WarnWin.configure(height=125, width=125)
-    WarnLabel = tk.Label(WarnWin, text = f"YOU DID SOMETHING WRONG: {warnMsg}")
+    WarnWin.configure(height=125, width=500)
+    WarnLabel = tk.Label(WarnWin, text = f"ERROR: \n{warnMsg}")
     WarnLabel.place(relheight=1, relwidth=1)
-
+#Don't type func param. Func type is None.
 def WinCreate(title:str, options:tuple, rootWin:tk.Tk | tk.Toplevel, 
-              func:str, OpVar:tk.StringVar, textBox:bool = False, textBoxMessage:str = "Enter your text here", runButtonText:str = "Run your chosen function",
+              func, OpVar:tk.StringVar, textBox:bool = False, textBoxMessage:str = "Enter your text here", runButtonText:str = "Run your chosen function",
               height:int = 250, width:int = 250, ):
     #Setup of new window
     win = tk.Toplevel(rootWin)
@@ -110,7 +109,6 @@ def WinCreate(title:str, options:tuple, rootWin:tk.Tk | tk.Toplevel,
     win.protocol("WM_DELETE_WINDOW", win.withdraw)
     win.withdraw()
     #The combobox for options
-    OpVar = tk.StringVar()
     Choices = ttk.Combobox(win, textvariable=OpVar)
     Choices['values'] = options
     Choices.state(["readonly"])
@@ -121,7 +119,7 @@ def WinCreate(title:str, options:tuple, rootWin:tk.Tk | tk.Toplevel,
     #Resizement
     win.update_idletasks()
     #A button to run stuff
-    RunButton = tk.Button(win, command=lambda : func, text=runButtonText)
+    RunButton = tk.Button(win, command=lambda: func(), text=runButtonText)
     RunButton.grid(row=2, column=1)
     #Quite a few Git functions need text. e.g commit needs a commit message. So i have this textbox
     if textBox == True:
@@ -146,9 +144,8 @@ def WinCreate(title:str, options:tuple, rootWin:tk.Tk | tk.Toplevel,
     #That one's on you
     if fontUsed.measure(max(max(options, key=len), runButtonText, textBoxMessage if True else "", key=len)) > width:
         win.geometry(f'{fontUsed.measure(max(max(options, key=len), runButtonText, textBoxMessage if True else "", key=len))+Leeway}x{height}')
-        height = 5 #In characters, not pixels
-        )
-        WinTextbox.grid(row=4, column = 1, sticky="ew")
+
+        if textBox: WinTextbox.grid(row=4, column = 1, sticky="ew") 
         #Choice.winfo_width and everything else is measured in no# of characters, then max returns the largest one. measure takes how many
         #pixels long it is
 
@@ -223,9 +220,7 @@ addPos = ["all changes in current directory including subdirectories",
               "one file",
               "one folder"]
 
-def add():
-    if addVar.get() != "":
-        #Using addpos[1] because of better modularity and 
+
 def add():
     if addVar.get() != "":
         #Using addpos[1] because of better modularity and 
@@ -252,7 +247,7 @@ def add():
 
 #Make sure to go name of func when you go NameToCmd[i] + win, so we can put all windows in one list
 addWin = WinCreate(title="add", width=250, height=250, options=tuple(addPos), 
-                                     rootWin=root, func = "push", runButtonText="run", OpVar = addVar)
+                                     rootWin=root, func = add, runButtonText="run", OpVar = addVar)
 
 #commit
 
@@ -270,26 +265,30 @@ def commit():
     #winfo_children gets the window's children. the number 3 is hard-coded because I have other priorities
     #and you could honestly add that yourself. And if you wondering, what does it acess, it acesses the optional
     #textbox is the function
-    comTex = commitWin.winfo_children()[3].get("1.0", tk.END) # type: ignore
-    if commitVar == commitPos[1]:
+    #stwF stands for scrolledtextwidget frame
+    stw = commitWin.winfo_children()[3] #type:ignore
+    #stwT stands for scrolledtextwidget Text
+    stwT = stw.winfo_children()[1] #type: ignore
+    comTex = stwT.get("1.0", tk.END) # type: ignore
+    if commitVar.get() == commitPos[1]:
         if comTex != "":
             RunCmd("-m", f"{comTex}")
         else:
             pass #Once warning window creation is made
         
-    elif commitVar == commitPos[0]:
+    elif commitVar.get() == commitPos[0]:
         if comTex != "":
                     RunCmd("-am", f"{comTex}")
         else:
             pass #Once warning window creation is made
-    elif commitVar == commitPos[2]:
+    elif commitVar.get() == commitPos[2]:
         if comTex != "":
             RunCmd("--amend", "-m", f"{comTex}")
         else:
             pass #Same thing here mate.'
 
 commitWin = WinCreate(title="commit", width=250, height=250, options=tuple(commitPos), 
-                                     rootWin = root, func = "commit", runButtonText="commitOptions", OpVar = commitVar, 
+                                     rootWin = root, func = commit, runButtonText="run", OpVar = commitVar, 
                                      textBox=True, textBoxMessage= "Please enter your commit message here."
                                      )       
 
@@ -305,12 +304,12 @@ pullPos = ["rebase",
 #FYI: Git pull -r origin basically gets the current branch on the remote 
 # and puts it ahead of the current main branch
 def pull():
-    if pullVar == pullPos[0]:
+    if pullVar.get() == pullPos[0]:
         RunCmd("-r", "origin", f"{cfd}")
-    elif pullVar == pullPos[1]:
+    elif pullVar.get() == pullPos[1]:
         RunCmd()
         
-PullWin = WinCreate(title="Pull", width=250, height=250, options=("rebase", "Standard"), rootWin=root, func = "Pull", runButtonText="PullOptions", OpVar = PullVar)
+pullWin = WinCreate(title="Pull", width=250, height=250, options=("rebase", "Standard"), rootWin=root, func = pull, runButtonText="run", OpVar = pullVar)
 
 #push
 pushVar = tk.StringVar()
@@ -324,15 +323,15 @@ pushPos = [
 #FYI: Git pull -r origin basically gets the current branch on the remote 
 # and puts it ahead of the current main branch
 def push():
-    if pushVar == pushPos[0]:
+    if pushVar.get() == pushPos[0]:
         RunCmd()
-    elif pushVar == pushPos[1]:
+    elif pushVar.get() == pushPos[1]:
         RunCmd("origin", "--delete", "feature-branch")
-    elif pushVar == "Show what would be pushed":
+    elif pushVar.get() == "Show what would be pushed":
         RunCmd("--dry-run")
 
-pushWin = WinCreate(title="push", width=250, height=250, options=tuple(pushPos), rootWin=root, func = "push", runButtonText="pushOptions", OpVar = pushVar)
-pushWin = WinCreate(title="push", width=250, height=250, options=tuple(pushPos), rootWin=root, func = "push", runButtonText="pushOptions", OpVar = pushVar)
+pushWin = WinCreate(title="push", width=250, height=250, options=tuple(pushPos), rootWin=root, func = push, runButtonText="run", OpVar = pushVar)
+
 
 #Create new branch
 
@@ -346,14 +345,10 @@ branchCreatePos = [
 ]
 
 
+
 def branch():
     branchText =  branchWin.winfo_children()[3].get("1.0", tk.END) #type: ignore
-    if branchCreateVar == branchCreatePos[0]:
-        RunCmd(f"{branchText}")
-    if branchCreateVar == branchCreatePos[1]:
-def branch():
-    branchText =  branchWin.winfo_children()[3].get("1.0", tk.END) #type: ignore
-    if branchCreateVar == branchCreatePos[0]:
+    if branchCreateVar.get() == branchCreatePos[0]:
         RunCmd(f"{branchText}")
     if branchCreateVar == branchCreatePos[1]:
         subprocess.run(
@@ -363,7 +358,7 @@ def branch():
                 f"{branchText}"
             ]
         )
-    if branchCreateVar == branchCreatePos[2]:
+    if branchCreateVar.get() == branchCreatePos[2]:
         #You can change this to runcmd(). I feel this will be easier though to use subprocess.run to
         #directly capture the output, since i only need to do it for this one function
         OutbranchTxt = subprocess.run(
@@ -377,7 +372,7 @@ def branch():
         #ResLabel for result label branch win
         ResLblBnchWin = tk.Label(branchWin, text=f"{OutbranchTxt}")
         ResLblBnchWin.grid(row=5, column=1)
-    if branchCreateVar == branchCreatePos[3]:
+    if branchCreateVar.get() == branchCreatePos[3]:
         subprocess.run(
             [
                 "git",
@@ -387,7 +382,7 @@ def branch():
         )
 
 branchWin = WinCreate(title="branch", width=250, height=250, options= tuple(branchCreatePos),
-                      rootWin=root, func = "branch", runButtonText="branchOptions", OpVar = branchCreateVar,
+                      rootWin=root, func = branch, runButtonText="run", OpVar = branchCreateVar,
                       textBox=True, textBoxMessage="Please enter your new branch name, name of branch you are" \
                       "switching to, or branch you are rebasing on top of")
 
@@ -411,32 +406,32 @@ def merge():
     #A list is used here, because the will grow too much due if further options are added, due to the fact
     #that you're combining the names and suffixes 
     mergeCmd = []
-    if mergeVarSuf == mergeSufPos[0]:
+    if mergeVarSuf.get() == mergeSufPos[0]:
         mergeCmd.append("--no-ff")
-    elif mergeVar == mergeSufPos[1]:
+    elif mergeVar.get() == mergeSufPos[1]:
         mergeCmd.append("--ff-only")
-    elif mergeVarSuf == mergeSufPos[2]:
+    elif mergeVarSuf.get() == mergeSufPos[2]:
         mergeCmd.append("--ff")
     mergeCmd = []
-    if mergeVarSuf == mergeSufPos[0]:
+    if mergeVarSuf.get() == mergeSufPos[0]:
         mergeCmd.append("--no-ff")
-    elif mergeVar == mergeSufPos[1]:
+    elif mergeVar.get() == mergeSufPos[1]:
         mergeCmd.append("--ff-only")
-    elif mergeVarSuf == mergeSufPos[2]:
+    elif mergeVarSuf.get() == mergeSufPos[2]:
         mergeCmd.append("--ff")
 
-    if mergeVar == mergePos[0]:
+    if mergeVar.get() == mergePos[0]:
         mergeCmd.append(mergeWin.winfo_children()[3].get("1.0", tk.END)) #type:ignore
-    elif mergeVar == mergePos[1]:
-        mergeCmd.append(mergeWin.winfo_children()[3].get("1.0", tk.END).strip.split.(",")) #type: ignore
+    elif mergeVar.get() == mergePos[1]:
+        mergeCmd.append(mergeWin.winfo_children()[3].get("1.0", tk.END).strip.split(",")) #type: ignore
 
-    RunCmd(tuple(MergeCmd))
+    RunCmd(tuple(mergeCmd))
 
-MergeWin = WinCreate(title="Merge", width=250, height=250, options= tuple(MergePos),
-                      rootWin=root, func = "Merge", runButtonText="MergeOptions", OpVar = MergeVar,
+mergeWin = WinCreate(title="Merge", width=250, height=250, options= tuple(mergePos),
+                      rootWin=root, func = merge, runButtonText="run", OpVar = mergeVar,
                       textBox=True, textBoxMessage="Please the name/s of the branches you wish to merge with this syntax: branch_1," \
                       "branch_2,branch_3  and on and on, with no spaces" \
-                      "switching to, or branch you are rebasing on top of")
+                      "switching to, or branch you are rebasing on top oFf")
 SufComb = ttk.Combobox(mergeWin, textvariable=mergeVarSuf)
 SufComb['values'] = mergeSufPos
 SufComb.grid(row=1, column=2)

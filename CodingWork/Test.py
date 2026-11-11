@@ -1,13 +1,14 @@
-from enum import Enum
+import tkinter as tk
+from tkinter import scrolledtext
 
-class GitOps(Enum):
-    ADD = "add"
-    PULL = 'pull'
-    PUSH = 'push'
-    COMMIT = 'commit'
-    BRANCH_FUNCTION_INC_REBASE = 'rebase'
-    MERGE = 'merge'
+root = tk.Tk()
+top = tk.Toplevel(root)
+lab = scrolledtext.ScrolledText(top)
+lab.insert(tk.INSERT, "test text smple")
 
-print(GitOps[list(GitOps.__members__.keys())[1]].value)
-print(GitOps['ADD'])
-#windows[[x.value for x in GitOps.__members__][i]] = globals()[f"{[GitOps.__members__][i][0].upper()}{[x.value for x in GitOps.__members__][i][1:]}Win"]
+
+wig = top.winfo_children()[0]
+wigT = wig.winfo_children()[1]
+print(wigT.get("1.0", tk.END)) #type:ignore
+
+print(top.winfo_children()[0].winfo_children()[1].get("1.0", tk.END)) 

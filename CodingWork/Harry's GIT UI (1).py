@@ -146,6 +146,22 @@ def WinCreate(title:str, options:tuple, rootWin:tk.Tk | tk.Toplevel,
     #That one's on you
     if fontUsed.measure(max(max(options, key=len), runButtonText, textBoxMessage if True else "", key=len)) > width:
         win.geometry(f'{fontUsed.measure(max(max(options, key=len), runButtonText, textBoxMessage if True else "", key=len))+Leeway}x{height}')
+        height = 5 #In characters, not pixels
+        )
+        WinTextbox.grid(row=4, column = 1, sticky="ew")
+        #Choice.winfo_width and everything else is measured in no# of characters, then max returns the largest one. measure takes how many
+        #pixels long it is
+
+        #max(options, key=len) is the width of the combobox, set earlier in code
+        #This negates the problem of TypeError: object of type 'method' has no len()
+    #Window resizement
+    Leeway = 150
+    #Let's say you underestimate the width of the windows you thought you needed.
+    #This fixes that problem for you!
+    #Unfortunately, if you have two widgets in the same row, like in the merge window, it doesn't work
+    #That one's on you
+    if fontUsed.measure(max(max(options, key=len), runButtonText, textBoxMessage if True else "", key=len)) > width:
+        win.geometry(f'{fontUsed.measure(max(max(options, key=len), runButtonText, textBoxMessage if True else "", key=len))+Leeway}x{height}')
     return win
 #UI
 
@@ -180,6 +196,7 @@ selectFolder = tk.Button(uiF,
 selectFolder.grid(row=3, column=1)
 
 
+
 #All the function sub-windows
 
 
@@ -206,6 +223,9 @@ addPos = ["all changes in current directory including subdirectories",
               "one file",
               "one folder"]
 
+def add():
+    if addVar.get() != "":
+        #Using addpos[1] because of better modularity and 
 def add():
     if addVar.get() != "":
         #Using addpos[1] because of better modularity and 
@@ -290,7 +310,7 @@ def pull():
     elif pullVar == pullPos[1]:
         RunCmd()
         
-pullWin = WinCreate(title="pull", width=250, height=250, options=("rebase", "Standard"), rootWin=root, func = "pull", runButtonText="pullOptions", OpVar = pullVar)
+PullWin = WinCreate(title="Pull", width=250, height=250, options=("rebase", "Standard"), rootWin=root, func = "Pull", runButtonText="PullOptions", OpVar = PullVar)
 
 #push
 pushVar = tk.StringVar()
@@ -312,6 +332,7 @@ def push():
         RunCmd("--dry-run")
 
 pushWin = WinCreate(title="push", width=250, height=250, options=tuple(pushPos), rootWin=root, func = "push", runButtonText="pushOptions", OpVar = pushVar)
+pushWin = WinCreate(title="push", width=250, height=250, options=tuple(pushPos), rootWin=root, func = "push", runButtonText="pushOptions", OpVar = pushVar)
 
 #Create new branch
 
@@ -325,6 +346,11 @@ branchCreatePos = [
 ]
 
 
+def branch():
+    branchText =  branchWin.winfo_children()[3].get("1.0", tk.END) #type: ignore
+    if branchCreateVar == branchCreatePos[0]:
+        RunCmd(f"{branchText}")
+    if branchCreateVar == branchCreatePos[1]:
 def branch():
     branchText =  branchWin.winfo_children()[3].get("1.0", tk.END) #type: ignore
     if branchCreateVar == branchCreatePos[0]:
@@ -391,16 +417,23 @@ def merge():
         mergeCmd.append("--ff-only")
     elif mergeVarSuf == mergeSufPos[2]:
         mergeCmd.append("--ff")
+    mergeCmd = []
+    if mergeVarSuf == mergeSufPos[0]:
+        mergeCmd.append("--no-ff")
+    elif mergeVar == mergeSufPos[1]:
+        mergeCmd.append("--ff-only")
+    elif mergeVarSuf == mergeSufPos[2]:
+        mergeCmd.append("--ff")
 
     if mergeVar == mergePos[0]:
         mergeCmd.append(mergeWin.winfo_children()[3].get("1.0", tk.END)) #type:ignore
     elif mergeVar == mergePos[1]:
         mergeCmd.append(mergeWin.winfo_children()[3].get("1.0", tk.END).strip.split.(",")) #type: ignore
 
-    RunCmd(tuple(mergeCmd))
+    RunCmd(tuple(MergeCmd))
 
-mergeWin = WinCreate(title="merge", width=250, height=250, options= tuple(mergePos),
-                      rootWin=root, func = "merge", runButtonText="mergeOptions", OpVar = mergeVar,
+MergeWin = WinCreate(title="Merge", width=250, height=250, options= tuple(MergePos),
+                      rootWin=root, func = "Merge", runButtonText="MergeOptions", OpVar = MergeVar,
                       textBox=True, textBoxMessage="Please the name/s of the branches you wish to merge with this syntax: branch_1," \
                       "branch_2,branch_3  and on and on, with no spaces" \
                       "switching to, or branch you are rebasing on top of")
@@ -412,6 +445,9 @@ SufComb.grid(row=1, column=2)
 #coming back to this project.
 
 #List of all the windows for easy acces by opwin()
+
+
+
 
 
 

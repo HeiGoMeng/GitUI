@@ -10,6 +10,7 @@ from tkinter import ttk
 from tkinter import filedialog
 from tkinter import scrolledtext
 from tkinter import font
+from collections.abc import Callable
 from PIL import Image, ImageTk
 import subprocess
 import os
@@ -34,18 +35,43 @@ bgF.pack()
 #CD into a folder
 #CD'd folder directory
 cfd = None
+#Test warning system
 def cdFolder():
-    global cfd
+    print(os.getcwd())
     cfd = filedialog.askdirectory()
     os.chdir(cfd)
+    print(os.getcwd())
+    #To test if folder is a git repo
+    TestCmdTxt = subprocess.run(
+        [
+            "git",
+            'rev-parse'
+        ],
+        capture_output=True,
+        text=True
+    ).stderr
+    print(repr(TestCmdTxt.strip()))
+    if TestCmdTxt == "":
+        pass
+    elif TestCmdTxt == "fatal: not a git repository (or any of the parent directories): .git":
+        WarnWin("This is not a git repo. Netiher are any of the parents. Please select a git repo. Undoing Cd now.")
+        subprocess.run(
+            [
+                "cd",
+                ".."
+            ]
+        )
+    else:
+        WarnWin("Error unknown. Please fix it yourself. Printing the test of Is It a Git Repo output text now in VScode terminal")
+        print(TestCmdTxt)
 #Run a command in terminal
 #Suf means suffix. Like -p, ., or any of the additions.
 def RunCmd(*Suf):
     subprocess.run(
         [
-            "git",
-            GitOps[Choice.get()],
-            *Suf
+            "git", #type: ignore
+            GitOps[Choice.get()],#type: ignore
+            *Suf #type: ignore
         ]
     )
 #Open existing window
@@ -53,8 +79,10 @@ def OpWin():
     windows[
         GitOps[Choice.get()].value #This is a part of the 5 way repeat handshake I talk about later
         ].deiconify()
-
+    #No need for redundancy here, .state["readonly"] does that for you
     #add this back later in the code due to the fact that this ain't a compiler
+
+
 
 class GitOps(Enum):
     ADD = "add"
@@ -65,6 +93,11 @@ class GitOps(Enum):
     MERGE = 'merge'
 #Fun fact: Tkinter button object's command method expects a string, not a function
 
+def WarnWin(warnMsg):
+    WarnWin = tk.Toplevel(root)
+    WarnWin.configure(height=125, width=125)
+    WarnLabel = tk.Label(WarnWin, text = f"YOU DID SOMETHING WRONG: {warnMsg}")
+    WarnLabel.place(relheight=1, relwidth=1)
 
 def WinCreate(title:str, options:tuple, rootWin:tk.Tk | tk.Toplevel, 
               func:str, OpVar:tk.StringVar, textBox:bool = False, textBoxMessage:str = "Enter your text here", runButtonText:str = "Run your chosen function",
@@ -80,6 +113,8 @@ def WinCreate(title:str, options:tuple, rootWin:tk.Tk | tk.Toplevel,
     OpVar = tk.StringVar()
     Choices = ttk.Combobox(win, textvariable=OpVar)
     Choices['values'] = options
+    Choices.state(["readonly"])
+    
     Choices.grid(column=1, row=1, sticky="nswe")
     Choices.config(width=len(max(options, key=len)))
     #Some would consider this redundant since Tk automatically resizes. Deletion is optional.
@@ -126,6 +161,8 @@ Choice = tk.StringVar()
 funcChoice = ttk.Combobox(uiF, textvariable = Choice)
 
 funcChoice['values'] = tuple([x.name for x in GitOps])
+
+funcChoice.state(["readonly"])
 
 funcChoice.grid(row = 2, column = 1, sticky="ew")
 
@@ -195,7 +232,7 @@ def add():
 
 #Make sure to go name of func when you go NameToCmd[i] + win, so we can put all windows in one list
 addWin = WinCreate(title="add", width=250, height=250, options=tuple(addPos), 
-                                     rootWin=root, func = "push", runButtonText="pushOptions", OpVar = addVar)
+                                     rootWin=root, func = "push", runButtonText="run", OpVar = addVar)
 
 #commit
 
@@ -358,7 +395,7 @@ def merge():
     if mergeVar == mergePos[0]:
         mergeCmd.append(mergeWin.winfo_children()[3].get("1.0", tk.END)) #type:ignore
     elif mergeVar == mergePos[1]:
-        mergeCmd.append(mergeWin.winfo_children()[3].get("1.0", tk.END).split(","))
+        mergeCmd.append(mergeWin.winfo_children()[3].get("1.0", tk.END).strip.split.(",")) #type: ignore
 
     RunCmd(tuple(mergeCmd))
 

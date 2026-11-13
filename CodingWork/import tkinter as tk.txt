@@ -1,0 +1,41 @@
+import tkinter as tk
+from tkinter import ttk
+from tkinter import filedialog
+from tkinter import scrolledtext
+from PIL import Image, ImageTk
+import subprocess
+import os
+from _collections_abc import Callable
+root = tk.Tk()
+
+def WinCreate(title:str, height:int, width:int, options:tuple, rootWin:tk.Tk | tk.Toplevel, 
+              func:str, OpVar:tk.StringVar, textBox:bool = False, textBoxMessage:str = "Enter your text here", runButtonText:str = "Run your chosen function"):
+    #Setup of new window
+    win = tk.Toplevel(rootWin, height=height, width=width)
+    win.title(title)
+    win.withdraw()
+    #The combobox for options
+    OpVar = tk.StringVar()
+    Choices = ttk.Combobox(win, textvariable=OpVar)
+    Choices['values'] = options
+    Choices.grid(column=1, row=1, sticky="nswe")
+    Choices.config(width=max([len(x) for x in options]))
+    #Some would consider this redundant since Tk automatically resizes. Deletion is optional.
+    #Resizement
+    win.update_idletasks()
+    win.config(width=Choices.winfo_width())
+    #A button to run stuff
+    RunButton = tk.Button(win, command=lambda : func, text=runButtonText)
+    RunButton.grid(row=2, column=1)
+    #Quite a few Git functions need text. e.g Commit needs a commit message. So i have this textbox
+    if textBox == True:
+        WinTextboxLabel = tk.Label(win, text = textBoxMessage)
+        WinTextboxLabel.grid(row=3, column=1)
+        WinTextbox = scrolledtext.ScrolledText(
+        win,
+        wrap = tk.WORD,
+        height = 125,
+        width=250,
+        )
+        WinTextbox.grid(row=4, column = 1)
+    return win

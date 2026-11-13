@@ -33,12 +33,17 @@ bgLabel = tk.Label(bgF, image = bg)
 bgLabel.place(x=0, y=0, relwidth = 1, relheight = 1)
 bgF.pack()
 
+class ErrorCodes():
+    #To replace stuff liekt he cfd message below
+    pass
+
 #Functions
 #CD into a folder
 #CD'd folder directory
-cfd = None
+cfd = "tempPlaceholder"
 #Test warning system
 def cdFolder():
+    global cfd
     print(os.getcwd())
     cfd = filedialog.askdirectory()
     os.chdir(cfd)
@@ -64,20 +69,27 @@ def cdFolder():
         )
     else:
         WarnWin("Error unknown. Please fix it yourself. Printing the test of Is It a Git Repo output text now in VScode terminal")
-        print(TestCmdTxt)
 #Run a command in terminal
 #Suf means suffix. Like -p, ., or any of the additions.
 def RunCmd(*Suf):
-    subprocess.run(
+    test = subprocess.run(
         [
             "git", #type: ignore
-            GitOps[Choice.get()].value,#type: ignore
+            GitOps[Choice.get()].value, #type: ignore
             *Suf #type: ignore
-        ]
+        ],
+        capture_output=True,
+        text=True
     )
+    if test.stderr != "":
+        WarnWin(test.stderr)
+
 #Open existing window
 def OpWin():
-    windows[
+    if cfd == "tempPlaceholder":
+        WarnWin('Ya need ta select a darn git repo BEFORE ya do some git stuff on it ya dingus.')
+    else:
+       windows[
         GitOps[Choice.get()].value #This is a part of the 5 way repeat handshake I talk about later
         ].deiconify()
     #No need for redundancy here, .state["readonly"] does that for you
@@ -110,7 +122,7 @@ def WinCreate(title:str, options:tuple, rootWin:tk.Tk | tk.Toplevel,
     #When the user tries to delete the window, it's withdrawn instead for later use
     win.protocol("WM_DELETE_WINDOW", win.withdraw)
     win.withdraw()
-    #The combobox for options
+    #The combobox for optionss
     Choices = ttk.Combobox(win, textvariable=OpVar)
     Choices['values'] = options
     Choices.state(["readonly"])
@@ -239,6 +251,7 @@ def add():
                                                    title="select a file")
             RunCmd(f"{StageFile}")
         elif Choice.get() == addPos[4]:
+            #error with dis
             StageFolder = filedialog.askdirectory(initialdir="/",
                                                 title="select a folder")
             RunCmd(f"{StageFolder}")
@@ -346,7 +359,8 @@ branchCreatePos = [
     "Rebase onto new branch"
 ]
 
-
+#Someone add renaming and deleting branches. 
+#I might do it later
 
 def branch():
     btw = branchWin.winfo_children()[3] #type:ignore
@@ -354,13 +368,13 @@ def branch():
     btwT = btw.winfo_children()[1] #type:ignore
     branchText =  btwT.get("1.0", tk.END) #type: ignore
     if branchCreateVar.get() == branchCreatePos[0]:
-        RunCmd(f"{branchText}")
-    if branchCreateVar == branchCreatePos[1]:
+        RunCmd(f"{branchText.strip()}")
+    if branchCreateVar.get() == branchCreatePos[1]:
         subprocess.run(
             [
                 "git",
                 "switch",
-                f"{branchText}"
+                f"{branchText.strip()}"
             ]
         )
     if branchCreateVar.get() == branchCreatePos[2]:
@@ -375,7 +389,7 @@ def branch():
             text=True
         )
         #ResLabel for result label branch win
-        ResLblBnchWin = tk.Label(branchWin, text=f"{OutbranchTxt}")
+        ResLblBnchWin = tk.Label(branchWin, text=f"{OutbranchTxt.stdout}")
         ResLblBnchWin.grid(row=5, column=1)
     if branchCreateVar.get() == branchCreatePos[3]:
         subprocess.run(
@@ -407,28 +421,35 @@ mergeSufPos = [
     "if possible, fast forward"
 ]
 
+
+
 def merge():
     #A list is used here, because the will grow too much due if further options are added, due to the fact
     #that you're combining the names and suffixes 
+
+    #Following the commit message textbox naming convention
+    mtw = mergeWin.winfo_children()[3]
+    mtwT = mtw.winfo_children()[1]
+    merTex = mtwT.get("1.0", tk.END) #type:ignore
+
     mergeCmd = []
-    if mergeVarSuf.get() == mergeSufPos[0]:
-        mergeCmd.append("--no-ff")
-    elif mergeVar.get() == mergeSufPos[1]:
-        mergeCmd.append("--ff-only")
-    elif mergeVarSuf.get() == mergeSufPos[2]:
-        mergeCmd.append("--ff")
-    mergeCmd = []
-    if mergeVarSuf.get() == mergeSufPos[0]:
-        mergeCmd.append("--no-ff")
-    elif mergeVar.get() == mergeSufPos[1]:
-        mergeCmd.append("--ff-only")
-    elif mergeVarSuf.get() == mergeSufPos[2]:
-        mergeCmd.append("--ff")
 
     if mergeVar.get() == mergePos[0]:
-        mergeCmd.append(mergeWin.winfo_children()[3].get("1.0", tk.END)) #type:ignore
+        mergeCmd.append(merTex.strip()) #type:ignore
     elif mergeVar.get() == mergePos[1]:
-        mergeCmd.append(mergeWin.winfo_children()[3].get("1.0", tk.END).strip.split(",")) #type: ignore
+        mergeCmd.append("-s")
+        mergeCmd.append(merTex.strip().split(",")) #type: ignore
+
+    if mergeVarSuf.get() == mergeSufPos[0]:
+        mergeCmd.append("--no-ff")
+    elif mergeVar.get() == mergeSufPos[1]:
+        mergeCmd.append("--ff-only")
+    elif mergeVarSuf.get() == mergeSufPos[2]:
+        mergeCmd.append("--ff")
+#Incorrect order, and that's not how you do octpusing,
+#It's git merge -s octopus branname1, branchname2
+
+
 
     RunCmd(tuple(mergeCmd))
 

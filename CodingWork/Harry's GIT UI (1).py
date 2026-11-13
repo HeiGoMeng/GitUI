@@ -344,6 +344,7 @@ def push():
         RunCmd("origin", "--delete", "feature-branch")
     elif pushVar.get() == "Show what would be pushed":
         RunCmd("--dry-run")
+        #Dry run has a terminal side bug
 
 pushWin = WinCreate(title="push", width=250, height=250, options=tuple(pushPos), rootWin=root, func = push, runButtonText="run", OpVar = pushVar)
 
